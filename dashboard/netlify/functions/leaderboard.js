@@ -6,7 +6,8 @@ const BRANCH       = process.env.SUBMISSIONS_BRANCH || "main";
 const TOTAL_DAYS   = parseInt(process.env.TOTAL_DAYS || "5", 10);
 
 const CACHE_MS = 25000;
-let cache = {};
+let cache = null;
+let cacheTs = 0;
 
 function fetchJSON(url) {
   return new Promise((resolve) => {
@@ -30,94 +31,75 @@ function submissionUrl(username, day) {
   return `https://raw.githubusercontent.com/${username}/${GITHUB_REPO}/${BRANCH}/submissions/day${day}.json`;
 }
 
-function scoreFromSubmission(sub) {
-  if (!sub) return null;
+function achievementScore(sub) {
+  if (!sub) return 0;
   if (typeof sub.score === 'number') return sub.score;
-  const achMap = { diamond: 3, gold: 2, silver: 1 };
-  if (sub.achievement && achMap[sub.achievement] != null) return achMap[sub.achievement];
+  const map = { diamond: 3, gold: 2, silver: 1 };
+  if (sub.achievement) return map[sub.achievement] ?? 0.5;
   if (sub.student_name && sub.student_name.trim().length > 2) return 0.5;
+  return 0;
+}
+
+function achievementLabel(sub) {
+  if (!sub) return null;
+  if (sub.achievement) return sub.achievement; // diamond / gold / silver
+  const score = achievementScore(sub);
+  if (score > 0) return 'submitted';
   return null;
-}
-
-function tierFromSubmission(sub, rankIndex, totalSubmitted) {
-  if (sub.achievement) {
-    const map = { diamond: 'gold', gold: 'silver', silver: 'bronze' };
-    return map[sub.achievement] || 'entry';
-  }
-  const pct = (rankIndex + 1) / totalSubmitted;
-  if (pct <= 0.10) return 'gold';
-  if (pct <= 0.35) return 'silver';
-  if (pct <= 0.70) return 'bronze';
-  return 'entry';
-}
-
-async function buildForDay(roster, day) {
-  const results = await Promise.all(
-    roster.map(async (s) => {
-      const sub = await fetchJSON(submissionUrl(s.github, day));
-      return { github: s.github, name: s.name || s.github, submission: sub };
-    })
-  );
-
-  const submitted = results
-    .filter((r) => scoreFromSubmission(r.submission) !== null)
-    .map((r) => ({ ...r, _score: scoreFromSubmission(r.submission) }));
-
-  submitted.sort((a, b) => b._score - a._score);
-
-  const ranked = submitted.map((r, i) => ({
-    github: r.github,
-    name: r.name,
-    score: r._score,
-    tasks_completed: r.submission.tasks_completed ?? null,
-    tasks_total: r.submission.tasks_total ?? null,
-    rank: i + 1,
-    tier: tierFromSubmission(r.submission, i, submitted.length),
-  }));
-
-  const submittedGithubs = new Set(submitted.map((r) => r.github));
-  const pending = results
-    .filter((r) => !submittedGithubs.has(r.github))
-    .map((r) => ({ github: r.github, name: r.name }));
-
-  return { day, ranked, pending, submitted_count: submitted.length };
 }
 
 exports.handler = async (event) => {
   const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
 
+  // Serve from cache if fresh
+  if (cache && Date.now() - cacheTs < CACHE_MS) {
+    return { statusCode: 200, headers, body: JSON.stringify(cache) };
+  }
+
   const roster = await fetchJSON(rosterUrl());
   if (!Array.isArray(roster) || roster.length === 0) {
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ error: 'roster_empty', message: 'roster.json not found (or empty) at the repo root.' }),
-    };
+    return { statusCode: 200, headers, body: JSON.stringify({ error: 'roster_empty' }) };
   }
 
-  const requestedDay = parseInt(event.queryStringParameters?.day, 10);
-  let day = requestedDay >= 1 && requestedDay <= TOTAL_DAYS ? requestedDay : null;
+  // Fetch all days for every student in parallel
+  const students = await Promise.all(
+    roster.map(async (s) => {
+      const dayResults = await Promise.all(
+        Array.from({ length: TOTAL_DAYS }, (_, i) => i + 1).map(async (day) => {
+          const sub = await fetchJSON(submissionUrl(s.github, day));
+          return {
+            day,
+            achievement: achievementLabel(sub),
+            score: achievementScore(sub),
+          };
+        })
+      );
 
-  if (day) {
-    const c = cache[day];
-    if (c && Date.now() - c.ts < CACHE_MS) {
-      return { statusCode: 200, headers, body: JSON.stringify(c.data) };
-    }
-    const result = await buildForDay(roster, day);
-    const payload = { ...result, total_days: TOTAL_DAYS, total_students: roster.length, generated_at: new Date().toISOString() };
-    cache[day] = { data: payload, ts: Date.now() };
-    return { statusCode: 200, headers, body: JSON.stringify(payload) };
-  }
+      const totalScore = dayResults.reduce((sum, d) => sum + d.score, 0);
+      const daysSubmitted = dayResults.filter(d => d.achievement !== null).length;
 
-  for (let d = TOTAL_DAYS; d >= 1; d--) {
-    const c = cache[d];
-    const result = c && Date.now() - c.ts < CACHE_MS ? c.data : await buildForDay(roster, d);
-    if (result.submitted_count > 0 || d === 1) {
-      const payload = { ...result, total_days: TOTAL_DAYS, total_students: roster.length, generated_at: new Date().toISOString() };
-      cache[d] = { data: payload, ts: Date.now() };
-      return { statusCode: 200, headers, body: JSON.stringify(payload) };
-    }
-  }
+      return {
+        github: s.github,
+        name: s.name || s.github,
+        days: dayResults,
+        totalScore,
+        daysSubmitted,
+      };
+    })
+  );
 
-  return { statusCode: 200, headers, body: JSON.stringify({ error: 'no_data' }) };
+  // Sort by total score descending, then alphabetically
+  students.sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name));
+
+  const payload = {
+    students: students.map((s, i) => ({ ...s, rank: i + 1 })),
+    total_students: roster.length,
+    total_days: TOTAL_DAYS,
+    generated_at: new Date().toISOString(),
+  };
+
+  cache = payload;
+  cacheTs = Date.now();
+
+  return { statusCode: 200, headers, body: JSON.stringify(payload) };
 };

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Samsung GenAI — Mission Console</title>
+<title>Samsung GenAI — Live Scoreboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
@@ -13,37 +13,36 @@
 <header>
   <div class="brand">
     <span class="samsung-mark">SAMSUNG</span>
-    <span class="brand-title"><span class="led"></span> GenAI Program — Mission Console</span>
+    <span class="brand-title">GenAI Program — Live Scoreboard</span>
   </div>
   <div class="header-right">
-    <div class="updated" id="updated">—</div>
+    <span class="led"></span>
+    <span class="updated" id="updated">—</span>
   </div>
 </header>
-
-<div class="tabs" id="tabs"></div>
 
 <div class="wrap">
   <div class="stats-bar">
     <div class="stat">
-      <div class="num" id="stat-submitted">–</div>
-      <div class="label">Submitted</div>
-    </div>
-    <div class="stat total-stat">
       <div class="num" id="stat-total">–</div>
-      <div class="label">Cohort Size</div>
+      <div class="label">Total Students</div>
     </div>
-    <div class="stat day-stat">
-      <div class="num" id="stat-day">–</div>
-      <div class="label">Day</div>
+    <div class="stat accent">
+      <div class="num" id="stat-submitted">–</div>
+      <div class="label">Have Submitted</div>
+    </div>
+    <div class="stat gold">
+      <div class="num" id="stat-score">–</div>
+      <div class="label">Top Score</div>
     </div>
   </div>
 
   <div id="content">
-    <div class="empty">Loading results…</div>
+    <div class="msg">Loading scoreboard…</div>
   </div>
 
   <footer>
-    Auto-refreshes every 20s &nbsp;·&nbsp; reads <code>submissions/dayN.json</code> from each student's GitHub fork
+    Auto-refreshes every 20 seconds &nbsp;·&nbsp; reads each student's GitHub fork directly
   </footer>
 </div>
 

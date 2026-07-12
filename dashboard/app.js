@@ -1,117 +1,114 @@
-const TIERS = {
-  gold:   { label: "Diamond",   icon: "💎", cssClass: "t-gold" },
-  silver: { label: "Gold",      icon: "🥇", cssClass: "t-silver" },
-  bronze: { label: "Silver",    icon: "🥈", cssClass: "t-bronze" },
-  entry:  { label: "Submitted", icon: "✅", cssClass: "t-entry" },
+const MEDAL = {
+  diamond:   { icon: '💎', label: 'Diamond', color: '#00D4AA' },
+  gold:      { icon: '🥇', label: 'Gold',    color: '#FFD700' },
+  silver:    { icon: '🥈', label: 'Silver',  color: '#C0C8D8' },
+  submitted: { icon: '✅', label: 'Done',    color: '#4A6FA5' },
 };
-const TIER_ORDER = ["gold", "silver", "bronze", "entry"];
 
-let selectedDay = null;
-let knownTotalDays = 5;
 let pollTimer = null;
+let totalDays = 5;
 
-async function fetchLeaderboard(day) {
-  const qs = day ? `?day=${day}` : "";
-  const res = await fetch(`/api/leaderboard${qs}`, { cache: "no-store" });
+async function fetchData() {
+  const res = await fetch('/api/leaderboard', { cache: 'no-store' });
   return res.json();
 }
 
-function renderTabs(activeDay) {
-  const tabs = document.getElementById("tabs");
-  tabs.innerHTML = "";
-  for (let d = 1; d <= knownTotalDays; d++) {
-    const btn = document.createElement("button");
-    btn.className = "tab" + (d === activeDay ? " active" : "");
-    btn.textContent = `Day ${d}`;
-    btn.onclick = () => { selectedDay = d; load(); };
-    tabs.appendChild(btn);
-  }
+function medalCell(achievement) {
+  if (!achievement) return `<td class="day-cell empty">—</td>`;
+  const m = MEDAL[achievement] || MEDAL.submitted;
+  return `<td class="day-cell" title="${m.label}"><span class="medal" style="color:${m.color}">${m.icon}</span></td>`;
 }
 
-function escapeHTML(str) {
-  const div = document.createElement("div");
-  div.textContent = str ?? "";
-  return div.innerHTML;
-}
-
-function chipHTML(entry, tier) {
-  const meta = TIERS[tier];
-  return `
-    <div class="chip">
-      <div class="chip-badge">${meta.icon}</div>
-      <div class="chip-rank">#${entry.rank}</div>
-      <div class="chip-name">${escapeHTML(entry.name)}</div>
-      <div class="chip-github">@${escapeHTML(entry.github)}</div>
-      <div class="chip-score">${meta.label}</div>
-    </div>`;
+function rankBadge(rank) {
+  if (rank === 1) return '<span class="rank-badge gold-rank">🥇 1</span>';
+  if (rank === 2) return '<span class="rank-badge silver-rank">🥈 2</span>';
+  if (rank === 3) return '<span class="rank-badge bronze-rank">🥉 3</span>';
+  return `<span class="rank-num">${rank}</span>`;
 }
 
 function render(data) {
-  document.getElementById("updated").textContent =
-    data.generated_at ? `Updated ${new Date(data.generated_at).toLocaleTimeString()}` : "";
-
-  if (data.error === "roster_empty") {
-    document.getElementById("content").innerHTML =
-      `<div class="error">roster.json not found or empty — add student GitHub usernames there first.</div>`;
-    return;
-  }
-  if (data.error === "no_data") {
-    document.getElementById("content").innerHTML =
-      `<div class="empty">No submissions yet. Waiting for students to push their day${data.day || 1}.json…</div>`;
+  if (data.error === 'roster_empty') {
+    document.getElementById('content').innerHTML =
+      `<div class="msg error">roster.json not found or empty — add student GitHub usernames to roster.json.</div>`;
     return;
   }
 
-  knownTotalDays = data.total_days || knownTotalDays;
-  renderTabs(data.day);
+  totalDays = data.total_days || 5;
+  const students = data.students || [];
 
-  document.getElementById("stat-submitted").textContent = data.submitted_count ?? 0;
-  document.getElementById("stat-total").textContent = data.total_students ?? "–";
-  document.getElementById("stat-day").textContent = data.day ?? "–";
+  document.getElementById('stat-total').textContent = data.total_students ?? '–';
+  document.getElementById('stat-submitted').textContent =
+    students.filter(s => s.daysSubmitted > 0).length;
+  document.getElementById('stat-score').textContent =
+    students.length > 0 ? Math.max(...students.map(s => s.totalScore)).toFixed(0) : '–';
+  document.getElementById('updated').textContent =
+    data.generated_at ? `Updated ${new Date(data.generated_at).toLocaleTimeString()}` : '';
 
-  const ranked = data.ranked || [];
-  const byTier = { gold: [], silver: [], bronze: [], entry: [] };
-  ranked.forEach((r) => byTier[r.tier]?.push(r));
-
-  let html = "";
-
-  if (ranked.length === 0) {
-    html = `<div class="empty">No submissions for Day ${data.day} yet. Students push submissions/day${data.day}.json to their fork.</div>`;
-  } else {
-    TIER_ORDER.forEach((t) => {
-      if (byTier[t].length === 0) return;
-      const meta = TIERS[t];
-      html += `
-        <div class="tier ${meta.cssClass}">
-          <div class="tier-head">
-            <span class="tier-icon">${meta.icon}</span>
-            <span class="tier-name">${meta.label}</span>
-            <span class="tier-count">${byTier[t].length} student${byTier[t].length > 1 ? "s" : ""}</span>
-          </div>
-          <div class="chip-grid">
-            ${byTier[t].map((e) => chipHTML(e, t)).join("")}
-          </div>
-        </div>`;
-    });
+  if (students.length === 0) {
+    document.getElementById('content').innerHTML =
+      `<div class="msg">No students found in roster.</div>`;
+    return;
   }
 
-  if ((data.pending || []).length > 0) {
-    html += `
-      <div class="pending-head">⏳ Awaiting submission — ${data.pending.length} student${data.pending.length > 1 ? "s" : ""}</div>
-      <div class="pending-grid">
-        ${data.pending.map((p) => `<span class="pending-chip">${escapeHTML(p.name)}</span>`).join("")}
-      </div>`;
+  // Build day header columns
+  let dayHeaders = '';
+  for (let d = 1; d <= totalDays; d++) {
+    dayHeaders += `<th class="day-header">Day ${d}</th>`;
   }
 
-  document.getElementById("content").innerHTML = html;
+  // Build student rows
+  let rows = '';
+  students.forEach(s => {
+    const dayCells = s.days.map(d => medalCell(d.achievement)).join('');
+    const hasAny = s.daysSubmitted > 0;
+    rows += `
+      <tr class="${hasAny ? 'active-row' : 'pending-row'}">
+        <td class="rank-cell">${rankBadge(s.rank)}</td>
+        <td class="name-cell">
+          <div class="student-name">${escapeHTML(s.name)}</div>
+          <div class="student-github">@${escapeHTML(s.github)}</div>
+        </td>
+        ${dayCells}
+        <td class="score-cell">${s.totalScore > 0 ? s.totalScore.toFixed(0) + ' pts' : '—'}</td>
+      </tr>`;
+  });
+
+  document.getElementById('content').innerHTML = `
+    <div class="table-wrap">
+      <table class="scoreboard">
+        <thead>
+          <tr>
+            <th class="rank-header">#</th>
+            <th class="name-header">Student</th>
+            ${dayHeaders}
+            <th class="score-header">Points</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span>💎 Diamond (3 pts)</span>
+      <span>🥇 Gold (2 pts)</span>
+      <span>🥈 Silver (1 pt)</span>
+      <span>✅ Submitted</span>
+      <span>— Not yet</span>
+    </div>`;
+}
+
+function escapeHTML(str) {
+  const d = document.createElement('div');
+  d.textContent = str ?? '';
+  return d.innerHTML;
 }
 
 async function load() {
   try {
-    const data = await fetchLeaderboard(selectedDay);
+    const data = await fetchData();
     render(data);
   } catch {
-    document.getElementById("content").innerHTML =
-      `<div class="error">Cannot reach the leaderboard function. Check Netlify deployment.</div>`;
+    document.getElementById('content').innerHTML =
+      `<div class="msg error">Cannot reach the leaderboard function. Check Netlify deployment.</div>`;
   }
 }
 
