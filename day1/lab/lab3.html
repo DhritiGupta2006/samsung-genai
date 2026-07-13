@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day 1 — Lab 3: Model Face-Off | Samsung GenAI Program</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0A0F2E; color: #F8FAFF; font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+#prog { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #00D4AA, #1428A0); z-index: 999; width: 0%; transition: width 0.4s; }
+
+header {
+  background: #0D1335; border-bottom: 1px solid #1E2A5E;
+  padding: 14px 32px; display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: #00D4AA; }
+.day-badge { background: #1428A0; color: #fff; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+.lab-badge { background: rgba(0,212,170,0.15); color: #00D4AA; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(0,212,170,0.25); }
+
+.container { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+h1 { font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 700; margin-bottom: 6px; }
+.subtitle { color: #7A8FA6; font-size: 14px; margin-bottom: 32px; }
+
+/* Achievement box */
+.achieve-box {
+  background: #0D1335; border: 1px solid #1E2A5E; border-radius: 14px;
+  padding: 20px 24px; margin-bottom: 28px;
+}
+.achieve-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: #7A8FA6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+.achieve-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.achieve-item { background: #111830; border-radius: 10px; padding: 14px; border: 1px solid #1E2A5E; }
+.achieve-icon { font-size: 22px; margin-bottom: 6px; }
+.achieve-name { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.achieve-desc { font-size: 11px; color: #7A8FA6; line-height: 1.6; }
+.achieve-item.diamond { border-color: rgba(185,240,255,0.35); }
+.achieve-item.diamond .achieve-name { color: #B9F0FF; }
+.achieve-item.gold { border-color: rgba(255,215,0,0.35); }
+.achieve-item.gold .achieve-name { color: #FFD700; }
+.achieve-item.silver { border-color: rgba(192,200,216,0.35); }
+.achieve-item.silver .achieve-name { color: #C0C8D8; }
+
+/* Prompt cards */
+.prompt-card {
+  background: #111830; border: 1px solid #1E2A5E; border-radius: 14px;
+  margin-bottom: 24px; overflow: hidden;
+}
+.prompt-header {
+  padding: 18px 24px; display: flex; align-items: center; gap: 14px;
+  cursor: pointer; user-select: none;
+}
+.prompt-num {
+  width: 36px; height: 36px; border-radius: 10px; background: #1428A0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; flex-shrink: 0;
+}
+.prompt-card.p3 .prompt-num { background: #7C3AED; }
+.prompt-title-wrap { flex: 1; }
+.prompt-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px; }
+.prompt-tag { font-size: 11px; color: #7A8FA6; margin-top: 2px; }
+.prompt-card.p3 .prompt-tag { color: #A78BFA; }
+.chevron { color: #7A8FA6; font-size: 18px; transition: transform 0.3s; }
+.prompt-card.open .chevron { transform: rotate(180deg); }
+
+.prompt-body { display: none; padding: 0 24px 24px; }
+.prompt-card.open .prompt-body { display: block; }
+
+.prompt-text-box {
+  background: #0D1B3E; border: 1px solid #1E3070; border-radius: 10px;
+  padding: 16px 18px; margin-bottom: 16px; position: relative;
+}
+.prompt-text-label { font-size: 10px; font-weight: 600; color: #3A6BC4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.prompt-text { font-size: 14px; line-height: 1.75; color: #C8D8F0; }
+.copy-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: #1428A0; color: #fff; border: none; padding: 5px 12px;
+  border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer;
+  transition: background 0.2s;
+}
+.copy-btn:hover { background: #1a35c9; }
+.copy-btn.copied { background: #00A882; }
+
+.run-note { background: #070C1F; border-left: 3px solid #00D4AA; border-radius: 0 8px 8px 0; padding: 10px 14px; margin-bottom: 18px; font-size: 12px; color: #7A8FA6; }
+.run-note strong { color: #00D4AA; }
+
+/* Comparison grid */
+.grid-label { font-size: 11px; font-weight: 600; color: #7A8FA6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.model-col { background: #0D1335; border: 1px solid #1E2A5E; border-radius: 10px; padding: 14px; }
+.model-name { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.model-name .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-gpt { background: #10A37F; }
+.dot-claude { background: #D97706; }
+.dot-gemini { background: #4285F4; }
+
+.score-row { margin-bottom: 10px; }
+.score-row label { font-size: 11px; color: #7A8FA6; display: block; margin-bottom: 4px; }
+.star-row { display: flex; gap: 4px; }
+.star {
+  width: 28px; height: 28px; border-radius: 6px; background: #1E2A5E;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px; transition: background 0.15s; color: #3A4F6E;
+}
+.star.active { background: rgba(255,215,0,0.2); color: #FFD700; }
+
+.text-area {
+  width: 100%; background: #070C1F; border: 1px solid #1E2A5E; border-radius: 6px;
+  padding: 8px 10px; color: #C8D8F0; font-family: 'Inter', sans-serif; font-size: 12px;
+  line-height: 1.6; resize: vertical; min-height: 70px; margin-top: 8px;
+  transition: border-color 0.2s;
+}
+.text-area:focus { outline: none; border-color: #00D4AA; }
+.text-area::placeholder { color: #3A4F6E; }
+
+/* Hallucination section */
+.halluc-box {
+  background: rgba(124,58,237,0.08); border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;
+}
+.halluc-label { font-size: 11px; font-weight: 600; color: #A78BFA; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.halluc-question { font-size: 13px; color: #C8D8F0; line-height: 1.7; margin-bottom: 12px; }
+.radio-row { display: flex; gap: 16px; margin-bottom: 10px; }
+.radio-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: #A0B0C8; }
+.radio-opt input { accent-color: #7C3AED; width: 15px; height: 15px; }
+
+/* Summary section */
+.summary-section { background: #111830; border: 1px solid #1E2A5E; border-radius: 14px; padding: 22px 24px; margin-bottom: 24px; }
+.summary-section h3 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+.field-row { margin-bottom: 14px; }
+.field-label { font-size: 12px; color: #7A8FA6; margin-bottom: 6px; }
+
+select {
+  width: 100%; background: #070C1F; border: 1px solid #1E2A5E; border-radius: 6px;
+  padding: 9px 12px; color: #C8D8F0; font-family: 'Inter', sans-serif; font-size: 13px;
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: #00D4AA; }
+
+/* Submission section */
+.submit-section { background: #0D1335; border: 1px solid #1E2A5E; border-radius: 14px; padding: 22px 24px; }
+.submit-section h3 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.submit-section p { font-size: 13px; color: #7A8FA6; margin-bottom: 16px; }
+
+.json-block {
+  background: #070C1F; border: 1px solid #1E2A5E; border-radius: 8px;
+  padding: 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  color: #A0B0C8; line-height: 1.8; white-space: pre; overflow-x: auto;
+  margin-bottom: 16px;
+}
+.json-key { color: #00D4AA; }
+.json-str { color: #F59E0B; }
+.json-num { color: #A78BFA; }
+.json-bool { color: #EC4899; }
+
+.cmd-block {
+  background: #070C1F; border: 1px solid #1E2A5E; border-radius: 8px;
+  padding: 14px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  color: #A0B0C8; line-height: 2; margin-bottom: 8px;
+}
+.cmd-block .cmd { color: #00D4AA; }
+.cmd-block .cmt { color: #3A4F6E; }
+
+/* Stretch section */
+.stretch-box {
+  background: rgba(0,212,170,0.05); border: 1px solid rgba(0,212,170,0.2);
+  border-radius: 12px; padding: 16px 18px; margin-bottom: 22px;
+}
+.stretch-label { font-size: 11px; font-weight: 600; color: #00D4AA; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.stretch-desc { font-size: 13px; color: #A0B0C8; line-height: 1.7; }
+
+/* Divider */
+.divider { border: none; border-top: 1px solid #1E2A5E; margin: 28px 0; }
+
+/* Submission steps */
+.sub-step { background: #111830; border: 1px solid #1E2A5E; border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.sub-step-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; background: #0D1335; }
+.sub-step-num { width: 32px; height: 32px; border-radius: 50%; background: #1428A0; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+.sub-step-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; }
+.sub-step-body { padding: 16px 20px; font-size: 13px; color: #A0B0C8; line-height: 1.8; }
+.sub-step-body strong { color: #F8FAFF; }
+.save-checklist { background: #070C1F; border-radius: 8px; padding: 14px 16px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.save-row { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #A0B0C8; }
+.save-icon { flex-shrink: 0; font-size: 15px; }
+
+/* Model setup box */
+.model-setup-box {
+  background: #0D1335; border: 1px solid #1E3070; border-radius: 14px;
+  padding: 20px 24px; margin-bottom: 24px;
+}
+.model-setup-box h3 { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600; color: #7A8FA6; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+.model-version-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.model-version-table th { font-size: 11px; color: #7A8FA6; text-align: left; padding: 0 12px 8px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.model-version-table td { font-size: 13px; padding: 8px 12px 8px 0; border-top: 1px solid #1E2A5E; vertical-align: middle; }
+.model-version-table td:first-child { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }
+.version-pill { background: #1E2A5E; color: #00D4AA; font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 3px 10px; border-radius: 20px; }
+.setup-steps { display: flex; gap: 10px; flex-wrap: wrap; }
+.setup-step { background: #111830; border: 1px solid #1E2A5E; border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #A0B0C8; line-height: 1.6; flex: 1; min-width: 180px; }
+.setup-step strong { color: #F8FAFF; display: block; margin-bottom: 3px; font-size: 12px; }
+.step-num-small { display: inline-block; background: #1428A0; color: #fff; width: 18px; height: 18px; border-radius: 50%; text-align: center; line-height: 18px; font-size: 10px; font-weight: 700; margin-right: 4px; }
+
+/* Why results differ panel */
+.learn-panel {
+  background: #0A1428; border: 1px solid #1E3070; border-radius: 14px;
+  padding: 22px 24px; margin-bottom: 24px;
+}
+.learn-panel h3 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.learn-panel .learn-sub { font-size: 13px; color: #7A8FA6; margin-bottom: 18px; }
+.learn-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.learn-card { background: #111830; border: 1px solid #1E2A5E; border-radius: 10px; padding: 14px; }
+.learn-icon { font-size: 22px; margin-bottom: 8px; }
+.learn-title { font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #F8FAFF; }
+.learn-body { font-size: 12px; color: #7A8FA6; line-height: 1.65; }
+.enterprise-note { background: rgba(20,40,160,0.25); border: 1px solid rgba(20,40,160,0.5); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #A0B0C8; line-height: 1.7; }
+.enterprise-note strong { color: #00D4AA; }
+</style>
+</head>
+<body>
+<div id="prog" style="width:0%"></div>
+
+<header>
+  <div class="logo">⚡ Samsung GenAI</div>
+  <div class="day-badge">DAY 1</div>
+  <div class="lab-badge">Lab 3 — Model Face-Off</div>
+  <div style="margin-left:auto; font-size:12px; color:#7A8FA6;">Scored · git push to submit</div>
+</header>
+
+<div class="container">
+  <h1>Model Face-Off</h1>
+  <p class="subtitle">Run 3 prompts across ChatGPT, Claude, and Gemini Pro. Observe the differences. One prompt contains a hidden trap — only sharp eyes will catch it.</p>
+
+  <!-- Model setup -->
+  <div class="model-setup-box">
+    <h3>⚙ Before You Start — Use Exactly These Model Versions</h3>
+    <table class="model-version-table">
+      <tr>
+        <th>Tool</th>
+        <th>Model to Use</th>
+        <th>How to Verify</th>
+      </tr>
+      <tr>
+        <td><span style="color:#10A37F;">●</span> ChatGPT</td>
+        <td><span class="version-pill">GPT-4o</span></td>
+        <td style="font-size:12px; color:#7A8FA6;">Check model name shown at the top of the chat window. If you see GPT-4o mini, click it and switch to GPT-4o.</td>
+      </tr>
+      <tr>
+        <td><span style="color:#D97706;">●</span> Claude</td>
+        <td><span class="version-pill">Claude Sonnet</span></td>
+        <td style="font-size:12px; color:#7A8FA6;">Default on free tier. Shown in the model selector at the top. Do not use Projects — use plain chat only.</td>
+      </tr>
+      <tr>
+        <td><span style="color:#4285F4;">●</span> Gemini</td>
+        <td><span class="version-pill">Gemini 1.5 Pro</span></td>
+        <td style="font-size:12px; color:#7A8FA6;">Your student account includes Pro. Confirm in the model dropdown at the top — switch if you see Flash.</td>
+      </tr>
+    </table>
+    <div class="setup-steps">
+      <div class="setup-step"><strong><span class="step-num-small">1</span> Start a brand new chat</strong>Click "New Chat" in each tool before running every prompt. Do not continue an existing conversation.</div>
+      <div class="setup-step"><strong><span class="step-num-small">2</span> Disable ChatGPT memory</strong>Settings (bottom-left) → Personalization → Memory → turn OFF. Otherwise stored facts about you change the output.</div>
+      <div class="setup-step"><strong><span class="step-num-small">3</span> Same prompt, copy-paste exactly</strong>Use the Copy button below for each prompt. Do not retype — even small differences change the output.</div>
+    </div>
+  </div>
+
+  <!-- Achievement criteria -->
+  <div class="achieve-box">
+    <h3>Today's Achievement Criteria</h3>
+    <div class="achieve-row">
+      <div class="achieve-item silver">
+        <div class="achieve-icon">🥈</div>
+        <div class="achieve-name">Silver</div>
+        <div class="achieve-desc">All 3 prompts attempted + JSON submitted via git push</div>
+      </div>
+      <div class="achieve-item gold">
+        <div class="achieve-icon">🥇</div>
+        <div class="achieve-name">Gold</div>
+        <div class="achieve-desc">Silver + correctly identified and documented the hallucination <em>OR</em> submitted in top 50% of class</div>
+      </div>
+      <div class="achieve-item diamond">
+        <div class="achieve-icon">💎</div>
+        <div class="achieve-name">Diamond</div>
+        <div class="achieve-desc">Gold + fast submission + AhaSlides checkpoint score above trainer threshold</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT 1 -->
+  <div class="prompt-card open" id="pc1">
+    <div class="prompt-header" onclick="togglePrompt('pc1')">
+      <div class="prompt-num">P1</div>
+      <div class="prompt-title-wrap">
+        <div class="prompt-title">Explain GenAI to your manager</div>
+        <div class="prompt-tag">Generic · No trap · Compare clarity and tone</div>
+      </div>
+      <div class="chevron">▾</div>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-text-box">
+        <div class="prompt-text-label">Copy this prompt exactly into all 3 models</div>
+        <div class="prompt-text" id="pt1">You are joining a top MNC as a fresh graduate tomorrow. Your hiring manager sends you a Slack message asking you to explain Generative AI in under 100 words so she can share it with the leadership team. Write your response.</div>
+        <button class="copy-btn" onclick="copyPrompt('pt1', this)">Copy</button>
+      </div>
+      <div class="run-note"><strong>Run this in ChatGPT, Claude, and Gemini Pro.</strong> Then fill the grid below — score each model 1–5 stars for quality, and note what stood out.</div>
+
+      <div class="grid-label">Comparison Grid — Prompt 1</div>
+      <div class="compare-grid">
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-gpt"></span>ChatGPT</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p1-gpt"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p1-gpt-best" placeholder="e.g. Clearest analogy, best structure…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p1-gpt-bad" placeholder="e.g. Too generic, missed the tone…"></textarea>
+        </div>
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-claude"></span>Claude</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p1-claude"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p1-claude-best" placeholder="e.g. Most concise, professional tone…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p1-claude-bad" placeholder="e.g. Too formal, over-explained…"></textarea>
+        </div>
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-gemini"></span>Gemini Pro</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p1-gemini"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p1-gemini-best" placeholder="e.g. Used a great real-world example…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p1-gemini-bad" placeholder="e.g. Too long, missed word count…"></textarea>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">Winner for Prompt 1</div>
+        <select id="p1-winner">
+          <option value="">— Select —</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="claude">Claude</option>
+          <option value="gemini">Gemini Pro</option>
+          <option value="tie">It was a tie</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT 2 -->
+  <div class="prompt-card" id="pc2">
+    <div class="prompt-header" onclick="togglePrompt('pc2')">
+      <div class="prompt-num">P2</div>
+      <div class="prompt-title-wrap">
+        <div class="prompt-title">Write a Samsung Galaxy AI product announcement</div>
+        <div class="prompt-tag">Samsung-specific · No trap · Compare creativity and brand voice</div>
+      </div>
+      <div class="chevron">▾</div>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-text-box">
+        <div class="prompt-text-label">Copy this prompt exactly into all 3 models</div>
+        <div class="prompt-text" id="pt2">Samsung is launching a new Galaxy AI feature that automatically creates a personalized weekly highlight reel from your camera roll — selecting your best photos, adding captions, and setting them to music. Write a 120-word product announcement for this feature targeting young professionals aged 22–30.</div>
+        <button class="copy-btn" onclick="copyPrompt('pt2', this)">Copy</button>
+      </div>
+      <div class="run-note"><strong>Run this in all 3 models.</strong> Notice how differently they interpret "brand voice." Does any model feel more like something Samsung would actually publish?</div>
+
+      <div class="grid-label">Comparison Grid — Prompt 2</div>
+      <div class="compare-grid">
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-gpt"></span>ChatGPT</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p2-gpt"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p2-gpt-best" placeholder="e.g. Great product language, hit word count…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p2-gpt-bad" placeholder="e.g. Too salesy, invented a feature name…"></textarea>
+        </div>
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-claude"></span>Claude</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p2-claude"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p2-claude-best" placeholder="e.g. Realistic tone, good structure…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p2-claude-bad" placeholder="e.g. Missed the target audience…"></textarea>
+        </div>
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-gemini"></span>Gemini Pro</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p2-gemini"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p2-gemini-best" placeholder="e.g. Most creative, best headline…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p2-gemini-bad" placeholder="e.g. Repeated same phrases…"></textarea>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">Winner for Prompt 2</div>
+        <select id="p2-winner">
+          <option value="">— Select —</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="claude">Claude</option>
+          <option value="gemini">Gemini Pro</option>
+          <option value="tie">It was a tie</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROMPT 3 — with hallucination trap -->
+  <div class="prompt-card p3" id="pc3">
+    <div class="prompt-header" onclick="togglePrompt('pc3')">
+      <div class="prompt-num">P3</div>
+      <div class="prompt-title-wrap">
+        <div class="prompt-title">Galaxy S24 AI features deep-dive</div>
+        <div class="prompt-tag" style="color:#A78BFA;">Samsung-specific · ⚠ One prompt contains a hidden trap — fact-check carefully</div>
+      </div>
+      <div class="chevron">▾</div>
+    </div>
+    <div class="prompt-body">
+      <div class="prompt-text-box" style="border-color: rgba(124,58,237,0.3);">
+        <div class="prompt-text-label" style="color:#7C3AED;">Copy this prompt exactly into all 3 models</div>
+        <div class="prompt-text" id="pt3">List the 5 flagship Galaxy AI features that Samsung launched with the Galaxy S24 series in January 2024. For each feature: (a) exactly what it does, (b) whether the processing happens on-device or in Samsung's cloud servers, and (c) which processor or AI chip enables it.</div>
+        <button class="copy-btn" onclick="copyPrompt('pt3', this)" style="background:#7C3AED;">Copy</button>
+      </div>
+      <div class="run-note" style="border-color:#7C3AED;"><strong>Run this in all 3 models.</strong> Then independently verify the responses using a Google search. Models answer this confidently — but not always correctly. The trap is in the specific technical details.</div>
+
+      <div class="grid-label">Comparison Grid — Prompt 3</div>
+      <div class="compare-grid">
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-gpt"></span>ChatGPT</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p3-gpt"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p3-gpt-best" placeholder="e.g. Specific feature names, good structure…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p3-gpt-bad" placeholder="e.g. Got the chip name wrong…"></textarea>
+        </div>
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-claude"></span>Claude</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p3-claude"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p3-claude-best" placeholder="e.g. Mentioned on-device vs cloud correctly…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p3-claude-bad" placeholder="e.g. Included features added in S25…"></textarea>
+        </div>
+        <div class="model-col">
+          <div class="model-name"><span class="dot dot-gemini"></span>Gemini Pro</div>
+          <div class="score-row">
+            <label>Quality (1–5)</label>
+            <div class="star-row" id="stars-p3-gemini"></div>
+          </div>
+          <label style="font-size:11px; color:#7A8FA6;">What was best about this response?</label>
+          <textarea class="text-area" id="p3-gemini-best" placeholder="e.g. Most accurate on chip details…"></textarea>
+          <label style="font-size:11px; color:#7A8FA6; margin-top:8px; display:block;">What was wrong or surprising?</label>
+          <textarea class="text-area" id="p3-gemini-bad" placeholder="e.g. Confused Snapdragon with Exynos…"></textarea>
+        </div>
+      </div>
+
+      <!-- Hallucination check -->
+      <div class="halluc-box">
+        <div class="halluc-label">⚠ Hallucination Check — This is what earns Gold/Diamond</div>
+        <div class="halluc-question">After fact-checking using Google Search, did any model state something that was <strong>incorrect or impossible to verify</strong> — such as a wrong chip name, wrong on-device/cloud split, or a feature that didn't launch with S24?</div>
+        <div class="radio-row">
+          <label class="radio-opt"><input type="radio" name="halluc" value="yes" onchange="showHallucDetail(true)"> Yes, I found a hallucination</label>
+          <label class="radio-opt"><input type="radio" name="halluc" value="no" onchange="showHallucDetail(false)"> No, all models were accurate</label>
+        </div>
+        <div id="halluc-detail-wrap" style="display:none;">
+          <label style="font-size:11px; color:#A78BFA; display:block; margin-bottom:6px;">Describe what you found — which model, what it stated, what is actually correct:</label>
+          <textarea class="text-area" id="halluc-detail" placeholder="e.g. ChatGPT said the on-device AI uses the 'Samsung Gauss Ultra' chip — this chip does not exist. The S24 uses Snapdragon 8 Gen 3 (Qualcomm)." style="min-height:90px;"></textarea>
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-label">Most accurate model for Prompt 3</div>
+        <select id="p3-winner">
+          <option value="">— Select —</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="claude">Claude</option>
+          <option value="gemini">Gemini Pro</option>
+          <option value="tie">All were equally accurate (or inaccurate)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why results differ -->
+  <div class="learn-panel">
+    <h3>Why Your Results May Differ From Your Classmate's</h3>
+    <p class="learn-sub">Even with the same prompt and same model version, two students can get different outputs. Here is why — and why it matters for your career.</p>
+    <div class="learn-cards">
+      <div class="learn-card">
+        <div class="learn-icon">🎲</div>
+        <div class="learn-title">Temperature — Built-in Randomness</div>
+        <div class="learn-body">Every LLM has a temperature setting that controls how much randomness is in each response. The default is not zero. So the same prompt, same model, same second — can produce different words. This is by design, not a bug. It makes responses feel natural rather than robotic.</div>
+      </div>
+      <div class="learn-card">
+        <div class="learn-icon">🧠</div>
+        <div class="learn-title">Different Training, Different Personality</div>
+        <div class="learn-body">ChatGPT, Claude, and Gemini were each trained on different datasets with different human feedback (RLHF). This gives each model a distinct "personality" — Claude tends to be more careful and hedged, ChatGPT more direct, Gemini more structured. Same question, different character.</div>
+      </div>
+      <div class="learn-card">
+        <div class="learn-icon">🗂️</div>
+        <div class="learn-title">Your Personal Context</div>
+        <div class="learn-body">ChatGPT's Memory feature stores facts about you across conversations — your name, interests, past topics. Claude remembers within a session. If two students have different stored context, the same prompt gives different answers. This is why Step 2 above (disable memory) matters for a fair comparison.</div>
+      </div>
+    </div>
+    <div class="enterprise-note">
+      <strong>Enterprise takeaway:</strong> This is exactly why production AI systems use <strong>API endpoints</strong>, not personal chat accounts. The API lets engineers set temperature = 0 for reproducible outputs, pass a controlled system prompt every time, and guarantee zero personal memory. What you are seeing today is the uncontrolled version — the personal account. Real MNC deployments engineer all of this out.
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-section">
+    <h3>Your Overall Take</h3>
+    <div class="field-row">
+      <div class="field-label">Overall winning model across all 3 prompts</div>
+      <select id="overall-winner">
+        <option value="">— Select —</option>
+        <option value="chatgpt">ChatGPT</option>
+        <option value="claude">Claude</option>
+        <option value="gemini">Gemini Pro</option>
+        <option value="tie">No clear winner — it depends on the task</option>
+      </select>
+    </div>
+    <div class="field-row">
+      <div class="field-label">What surprised you most across the 3 models? (1–2 sentences)</div>
+      <textarea class="text-area" id="biggest-surprise" placeholder="e.g. I expected ChatGPT to win but Claude's response to P2 sounded most like a real Samsung press release." style="min-height:80px;"></textarea>
+    </div>
+  </div>
+
+  <!-- Stretch -->
+  <div class="stretch-box">
+    <div class="stretch-label">Stretch Task — Finished early?</div>
+    <div class="stretch-desc">Design your own prompt for a Samsung use case that you think would expose an interesting difference between the three models. Run it, document what happened, and add it to your submission JSON under <code style="color:#00D4AA; background:#1E2A5E; padding:1px 6px; border-radius:3px; font-size:11px;">stretch_prompt</code> and <code style="color:#00D4AA; background:#1E2A5E; padding:1px 6px; border-radius:3px; font-size:11px;">stretch_observation</code>.</div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Submission -->
+  <div class="submit-section">
+    <h3>Submit Your Results — 4 Steps</h3>
+    <p>Follow each step exactly. Do not skip any step.</p>
+
+    <!-- Step 1 -->
+    <div class="sub-step">
+      <div class="sub-step-header">
+        <div class="sub-step-num">1</div>
+        <div class="sub-step-title">Open the submissions folder inside your cloned repo</div>
+      </div>
+      <div class="sub-step-body">
+        Open <strong>File Explorer</strong> on Windows. Navigate to the <code>samsung-genai</code> folder you cloned in Lab 1.<br>
+        You will see a folder called <code>submissions</code> already there. Open it.<br>
+        <span style="color:#EF4444; font-size:12px;">⚠ If you do not see a submissions folder, right-click inside samsung-genai → New → Folder → type <strong>submissions</strong></span>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="sub-step">
+      <div class="sub-step-header">
+        <div class="sub-step-num">2</div>
+        <div class="sub-step-title">Copy the template and edit your answers</div>
+      </div>
+      <div class="sub-step-body">
+        <div style="margin-bottom:10px;">Click <strong>Copy JSON</strong> below, then open <strong>Notepad</strong> (search "Notepad" in Windows Start menu), paste, and fill in your actual answers replacing the placeholder text.</div>
+        <button class="copy-btn" style="position:static; margin-bottom:12px;" onclick="copyJSON(this)">Copy JSON Template</button>
+        <div class="json-block"><span class="json-key">{
+  "day"</span>: <span class="json-num">1</span>,
+  <span class="json-key">"student_name"</span>: <span class="json-str">"Your Full Name"</span>,
+  <span class="json-key">"github"</span>: <span class="json-str">"your-github-username"</span>,
+  <span class="json-key">"lab"</span>: <span class="json-str">"model_face_off"</span>,
+  <span class="json-key">"p1_winner"</span>: <span class="json-str">"chatgpt"</span>,
+  <span class="json-key">"p1_observation"</span>: <span class="json-str">"What stood out in prompt 1"</span>,
+  <span class="json-key">"p2_winner"</span>: <span class="json-str">"claude"</span>,
+  <span class="json-key">"p2_observation"</span>: <span class="json-str">"What stood out in prompt 2"</span>,
+  <span class="json-key">"p3_winner"</span>: <span class="json-str">"gemini"</span>,
+  <span class="json-key">"p3_observation"</span>: <span class="json-str">"What stood out in prompt 3"</span>,
+  <span class="json-key">"hallucination_found"</span>: <span class="json-bool">false</span>,
+  <span class="json-key">"hallucination_detail"</span>: <span class="json-str">"Model | What it stated | What is actually correct"</span>,
+  <span class="json-key">"overall_winner"</span>: <span class="json-str">"chatgpt"</span>,
+  <span class="json-key">"biggest_surprise"</span>: <span class="json-str">"One sentence on what surprised you most"</span>,
+  <span class="json-key">"stretch_done"</span>: <span class="json-bool">false</span>,
+  <span class="json-key">"stretch_prompt"</span>: <span class="json-str">""</span>,
+  <span class="json-key">"stretch_observation"</span>: <span class="json-str">""</span>,
+  <span class="json-key">"achievement"</span>: <span class="json-str">"silver"</span>,
+  <span class="json-key">"submitted_at"</span>: <span class="json-str">"2026-07-13T00:00:00"</span>
+<span class="json-key">}</span></div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="sub-step">
+      <div class="sub-step-header">
+        <div class="sub-step-num">3</div>
+        <div class="sub-step-title">Save the file as day1.json inside the submissions folder</div>
+      </div>
+      <div class="sub-step-body">
+        In Notepad: <strong>File → Save As</strong><br><br>
+        <div class="save-checklist">
+          <div class="save-row"><span class="save-icon">📁</span> Navigate to: <code>samsung-genai → submissions</code></div>
+          <div class="save-row"><span class="save-icon">📝</span> File name: <code>day1.json</code></div>
+          <div class="save-row"><span class="save-icon">⚠️</span> Save as type: <strong>All Files (*.*)</strong> — <span style="color:#EF4444;">if you leave it as "Text Documents" it will save as day1.json.txt and will NOT work</span></div>
+          <div class="save-row"><span class="save-icon">✅</span> Click Save</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="sub-step">
+      <div class="sub-step-header">
+        <div class="sub-step-num">4</div>
+        <div class="sub-step-title">Push to GitHub using Git Bash</div>
+      </div>
+      <div class="sub-step-body">
+        Right-click inside the <code>samsung-genai</code> folder → <strong>Git Bash Here</strong><br>
+        Then run these 3 commands one by one, pressing Enter after each:
+        <div class="cmd-block" style="margin-top:12px;">
+<span class="cmd">git add submissions/day1.json</span>
+<span class="cmd">git commit -m "Day 1 lab - YOUR NAME"</span>
+<span class="cmd">git push origin main</span></div>
+        <div style="margin-top:10px; font-size:12px; color:#7A8FA6;">Replace <strong>YOUR NAME</strong> with your actual name in the commit message.<br>
+        After git push completes, your name appears on the live dashboard within 60 seconds.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function togglePrompt(id) {
+  const card = document.getElementById(id);
+  card.classList.toggle('open');
+  updateProgress();
+}
+
+function copyPrompt(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function showHallucDetail(show) {
+  document.getElementById('halluc-detail-wrap').style.display = show ? 'block' : 'none';
+}
+
+function copyJSON(btn) {
+  const json = `{
+  "day": 1,
+  "student_name": "Your Full Name",
+  "github": "your-github-username",
+
+  "lab2_team": "Your Team Name (e.g. Team Alpha)",
+  "lab2_model_used": "SmolLM2-360M-Instruct",
+  "lab2_gradio_url": "https://xxxx.gradio.live",
+
+  "lab": "model_face_off",
+  "p1_winner": "chatgpt",
+  "p1_observation": "What stood out in prompt 1",
+  "p2_winner": "claude",
+  "p2_observation": "What stood out in prompt 2",
+  "p3_winner": "gemini",
+  "p3_observation": "What stood out in prompt 3",
+  "hallucination_found": false,
+  "hallucination_detail": "Model | What it stated | What is actually correct",
+  "overall_winner": "chatgpt",
+  "biggest_surprise": "One sentence on what surprised you most",
+  "stretch_done": false,
+  "stretch_prompt": "",
+  "stretch_observation": "",
+  "submitted_at": ""
+}`;
+  navigator.clipboard.writeText(json).then(() => {
+    btn.textContent = 'Copied! Now open Notepad and paste.';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy JSON Template'; btn.classList.remove('copied'); }, 3000);
+  });
+}
+
+// Build star raters
+const STARS = ['p1-gpt','p1-claude','p1-gemini','p2-gpt','p2-claude','p2-gemini','p3-gpt','p3-claude','p3-gemini'];
+STARS.forEach(id => {
+  const wrap = document.getElementById('stars-' + id);
+  if (!wrap) return;
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.textContent = '★';
+    s.dataset.val = i;
+    s.dataset.group = id;
+    s.onclick = function() { setStars(id, i); };
+    wrap.appendChild(s);
+  }
+});
+
+function setStars(group, val) {
+  const wrap = document.getElementById('stars-' + group);
+  wrap.querySelectorAll('.star').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+  });
+  wrap.dataset.score = val;
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = 9; // 3 prompts × 3 models
+  let done = 0;
+  STARS.forEach(id => {
+    const wrap = document.getElementById('stars-' + id);
+    if (wrap && wrap.dataset.score) done++;
+  });
+  document.getElementById('prog').style.width = Math.round((done / total) * 100) + '%';
+}
+</script>
+</body>
+</html>

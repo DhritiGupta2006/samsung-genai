@@ -1,8 +1,15 @@
 # Day 1 — Introduction to GenAI
 **Samsung GenAI Program · SRM Kattankulathur · 13 July 2026**
 
-> Read this page on the projector or open this URL on your laptop before doing anything:
-> `https://github.com/Anilmidna/samsung-genai/blob/main/day1/day1readme.md`
+## Start here — do these 3 steps in order, before anything else
+
+**1. Go to the trainer's GitHub repo:**
+`https://github.com/Anilmidna/samsung-genai`
+
+**2. Click the Fork button** (top-right of that page) → **Create fork**.
+Wait until the browser address bar shows `github.com/YOUR-USERNAME/samsung-genai` — that's your own personal copy. You now own it; the trainer's copy is untouched.
+
+**3. You're now working from your fork, not the trainer's repo.** Every step below — cloning, labs, submissions — happens inside *your* copy. If you ever need to come back to these instructions, they also live inside your fork at `day1/day1readme.md`.
 
 ---
 
@@ -21,14 +28,7 @@ Open each of these in a browser tab and confirm you can log in:
 
 ---
 
-### 1B — Fork the trainer's repo
-1. Open the repo URL shown on the projector
-2. Click **Fork** (top right) → click **Create fork**
-3. Wait until you see `YOUR-USERNAME/samsung-genai` in the browser address bar
-
----
-
-### 1C — Clone your fork to your laptop
+### 1B — Clone your fork to your laptop
 1. Press **Windows key** → type **Git Bash** → press Enter
 2. A black terminal window opens. Type these commands one line at a time:
 
@@ -37,7 +37,7 @@ git clone https://github.com/YOUR-USERNAME/samsung-genai.git
 cd samsung-genai
 ```
 
-Replace `YOUR-USERNAME` with your actual GitHub username.
+Replace `YOUR-USERNAME` with your actual GitHub username (the fork you created in Step 2 above — not the trainer's).
 
 3. You should see a `samsung-genai` folder appear on your Desktop or Documents.
 

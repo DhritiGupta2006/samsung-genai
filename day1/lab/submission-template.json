@@ -2,6 +2,11 @@
   "day": 1,
   "student_name": "Your Full Name",
   "github": "your-github-username",
+
+  "lab2_team": "Team Name (e.g. Team Alpha)",
+  "lab2_model_used": "SmolLM2-360M-Instruct",
+  "lab2_gradio_url": "https://xxxx.gradio.live",
+
   "lab": "model_face_off",
   "p1_winner": "chatgpt",
   "p1_observation": "What stood out comparing models on Prompt 1",
@@ -16,6 +21,6 @@
   "stretch_done": false,
   "stretch_prompt": "",
   "stretch_observation": "",
-  "achievement": "silver",
+
   "submitted_at": ""
 }
