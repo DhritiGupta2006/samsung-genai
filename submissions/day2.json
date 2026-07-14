@@ -1,0 +1,19 @@
+{
+  "day": 2,
+  "student_name": "Dhriti Gupta",
+  "github": "DhritiGupta2006",
+  "lab1_scenario": "B",
+  "lab1_prompt": "You are a customer support agent. Reply to a customer with a third Galaxy Watch battery complaint this month. The watch is under warranty. Apologize, acknowledge the repeated issue, offer warranty inspection, repair, or replacement if eligible, do not promise a refund, use a professional and empathetic tone, and end by thanking the customer.",
+  "lab1_output_met_constraints": true,
+  "lab1_extra_scenarios_done": 2,
+  "lab2_problem": "Galaxy Buds distribution centre — shipment/hold/restock",
+  "lab2_naive_output_summary": "The AI calculated 4,299 units by subtracting 850 from 4,200, holding back 6% (201 units) from the remaining 3,350, and then adding the 1,150 restock. The final available-for-sale count is 4,299.",
+  "lab2_cot_prompt": "Work through this one step at a time: first compute the shipment, then the hold, then the restock. Show each step, then state the final answer.",
+  "lab2_cot_output_summary": "All three produced mathematically identical and logically correct answers. The variation is purely in formatting and readability. For a real inventory decision, any of these would be reliable, but the structured formats (Gemini/Claude) offer faster auditability.",
+  "better_approach": "cot",
+  "stretch_done": true,
+  "stretch_react_prompt": "You are an inventory analyst. Use ReAct reasoning (Thought → Action → Observation) to compute the final available Galaxy Buds units.\n\nTask: Starting stock 4,200. Ship out 850. Hold 6% of remaining stock. Restock 1,150.\n\nFollow this format exactly for each step:\n\nThought: What needs to be calculated next and why.\n\nAction: The arithmetic operation performed.\n\nObservation: The result of that action.\n\nConclude with a Final Answer statement.",
+  "tasks_completed": 6,
+  "tasks_total": 6,
+  "submitted_at": "2026-07-14T10:04:36.827Z"
+}
