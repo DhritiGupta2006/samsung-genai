@@ -1,0 +1,20 @@
+{
+  "day": 3,
+  "student_name": "Dhriti Gupta",
+  "github": "DhritiGupta2006",
+  "ir_hallucination_done": true,
+  "ir_bias_done": true,
+  "ir_guardrail_builder_done": true,
+  "ir_battle_complete": true,
+  "ir_battle_blocked": 7,
+  "ir_battle_total": 8,
+  "rag_scenario": "B",
+  "rag_no_rag_summary": "The No-RAG answer sounded confident, but it was only a guess unless backed by the document. The RAG version is the one you should trust because it cites the actual policy text",
+  "rag_grounded_summary": "The grounded answer should say that primary caregivers get 26 weeks of fully paid parental leave, while secondary caregivers get 2 weeks of fully paid leave. It should also note that the leave must be used within 12 months of the child’s birth or adoption date.",
+  "rag_judgement": "fixed_wrong",
+  "stretch_done": true,
+  "stretch_notes": "The provided document wins. In a RAG setup, the grounded text overrides the model’s prior memory, so if they conflict, you answer from the document only.\n\nExample: if the model “knew” meals were included, but the document says meals are reimbursed separately only when pre-approved, the document is the correct source for that run.",
+  "tasks_completed": 6,
+  "tasks_total": 6,
+  "submitted_at": "2026-07-15T06:54:34.321Z"
+}
