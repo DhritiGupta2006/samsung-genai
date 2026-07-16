@@ -1,7 +1,7 @@
-# Bonus Lab: Build a Real AI Agent on Amazon Bedrock
+# Bonus Lab: Real Grounded AI on Amazon Bedrock
 
 **Duration:** ~60 minutes
-**What you'll do:** Analyze real customer feedback with Claude on Bedrock, then build your own AI agent — **Course Copilot** — an assistant that answers questions about your own Generative AI course material by retrieving real content from the course chapters, not guessing.
+**What you'll do:** Analyze real customer feedback with Claude on Bedrock, then build **Course Copilot** — an assistant that answers questions about your own Generative AI course material by retrieving real content from the course chapters, not guessing.
 
 ---
 
@@ -17,7 +17,7 @@
 Toy prompts like "write me a poem" don't teach you much. Instead, you'll use Claude to do real analytical work on real (anonymized) customer feedback.
 
 1. Go to **Amazon Bedrock → Playgrounds → Chat**.
-2. Choose model: **Anthropic Claude 3 Haiku**.
+2. Choose a Claude model (Sonnet or the latest available).
 3. Paste the customer reviews below into the chat, followed by your instructions.
 
 **Sample data — paste this in first:**
@@ -47,62 +47,99 @@ You are a customer experience analyst. Based on the 10 reviews above:
 
 **Try this next** — change ONE thing and compare the output:
 - Add to your prompt: `Assume the team only has capacity to fix ONE thing this sprint — which one, and why?`
-- Re-run with **Claude 3 Sonnet** instead of Haiku. Compare quality vs. speed.
+- Re-run with a different Claude model. Compare quality vs. speed.
 
 This is the same skill — structured prompting for a real decision — that shows up in any job using an LLM: you're not asking for text, you're asking for a decision-ready output.
 
 ---
 
-## Part B — Build the Course Copilot Agent (35 min)
+## Part B — Course Copilot: Ask Your Own Course Material (35 min)
 
-You'll build this step-by-step with the trainer. A Knowledge Base has already been created and loaded with the 4 Generative AI course chapters — you're building the agent that uses it, not the knowledge base itself.
+A Knowledge Base has already been built and loaded with **Chapter 1 — Introduction to Generative AI** — you're querying it directly using its own built-in test chat. Nothing to create, nothing to configure.
 
-### Step 1 — Create the agent
+### Step 1 — Open the Knowledge Base
 
-1. Go to **Amazon Bedrock → Agents → Create Agent**.
-2. Name it `genai-agent-<yourusername>` (e.g. `genai-agent-student03`).
-3. Under **Agent resource role**, choose **Use an existing service role** and select `BedrockAgentLabExecutionRole`.
-4. Select model: **Anthropic Claude 3 Haiku**.
-5. Paste this into **Instructions for the Agent**:
+1. In the AWS Console search bar (top), type **Bedrock** and open **Amazon Bedrock**.
+2. In the left-hand navigation menu, find **Knowledge Bases** (under the Builder tools section) and click it.
+3. You'll see `knowledge-base-samsung-genai` in the list, with status **Available**. Click on its name to open it.
 
-```
-You are Course Copilot, an assistant for a Generative AI course covering:
-Introduction to Generative AI, Prompt Engineering Basics, Foundation Models and
-Platforms, and AI Ethics and Responsibility.
-Answer questions using the course knowledge base. If the knowledge base doesn't
-contain the answer, say so clearly instead of guessing.
-Keep answers concise and cite which chapter the answer came from when you can.
-```
+### Step 2 — Open the test panel
 
-### Step 2 — Attach the Knowledge Base (this is what makes it an *agent* grounded in real content, not a generic chatbot)
+1. On the Knowledge Base details page, look for the **Test Knowledge Base** panel — it's on the right-hand side of the screen (may need to click a "Test" button/icon to expand it if it's collapsed).
+2. You'll see a mode selector — choose **"Agentic retrieval with answer generation"** (the other modes either don't generate an answer, or aren't supported for this Knowledge Base type).
+3. Click **Select model** and choose any available Claude model.
+4. You'll see a chat box at the bottom of that panel — that's where you type your questions.
 
-1. Scroll to **Knowledge bases → Add**.
-2. Select the existing knowledge base: `genai-course-kb`.
-3. In **Knowledge base instructions for Agent**, enter:
-   ```
-   Use this knowledge base to answer any question about Generative AI concepts,
-   prompt engineering, foundation models, or AI ethics covered in the course.
-   ```
-4. Save.
+### Step 3 — Ask real questions (Chapter 1 topics only)
 
-### Step 3 — Prepare and test
+Type each of these into the test panel's chat box, one at a time, and read the response:
 
-1. Click **Prepare** (top right) to build the agent.
-2. In the test chat pane on the right, try:
-   - `What is Generative AI and how is it different from traditional AI?`
-   - `Give me 3 prompt engineering techniques from the course, with an example of each.`
-   - `What foundation model platforms were discussed?`
-   - `What are the main AI ethics and responsibility concerns covered in the course?`
-   - `What's the capital of France?` (see how it handles a question outside the knowledge base)
+- `What is Generative AI?`
+- `How is Generative AI different from traditional AI or machine learning?`
+- `What are some real-world examples or use cases of Generative AI?`
+- `What are the main types of Generative AI models mentioned?`
+
+**Then try a question the document can't answer:**
+- `Give me 3 prompt engineering techniques with examples.` (this is Chapter 2 content, not loaded)
+- `What's a good recipe for chocolate cake?` (completely unrelated domain)
+
+**What happens with these, and why that's correct:** since only Chapter 1 is loaded, the assistant should say it doesn't have that information, instead of guessing or making something up. **That's the expected, correct behavior** — not a bug.
+
+**Bonus "aha" moment to try:** ask `What's the capital of France?` — you may see it actually answer this correctly, citing a source. That's not a mistake: Chapter 1 likely uses "the capital of France is Paris" as an example sentence while explaining how models predict the next word/token. The retrieval found that real passage and cited it — it's still grounded, just via an incidental example rather than the chapter's core topic. Good discussion point: retrieval grabs *any* relevant passage in the document, not just what you'd consider the "main" content.
+
+### Step 4 — Check the source citations
+
+After each answer that *is* answered, look below it for a **citations / source chunks** link or icon. Click it — it shows you the exact passage from Chapter 1 the answer was pulled from. This is the proof that it's not answering from memory.
 
 ### What to notice
 
-- You never pasted any course content into the agent — it retrieved the relevant passage from the actual PDF chapters at answer time and grounded its response in that, not in what Claude already "knew."
-- Ask it something outside the 4 chapters and watch it say so, instead of confidently making something up — that's the difference between a knowledge base-grounded agent and a plain chatbot.
-- This same pattern — an LLM + retrieval over your own documents — is how real "chat with your data" systems are built: internal wikis, policy documents, support knowledge bases, and beyond. You just built the same shape of system, pointed at your own course material.
+- The citation is the whole point: it's pointing at a real chunk of the real PDF, not generating text from what Claude already "knew."
+- Ask it something outside Chapter 1 and watch it say so (or notice if it doesn't — see Step 3).
+- This retrieve-then-generate pattern is the same one behind every "chat with your data" product — internal wikis, policy documents, support knowledge bases. You just used it directly, pointed at your own course material.
+
+---
+
+## Part C — Build a Guardrail (10-15 min)
+
+Every real AI system needs a safety layer independent of the model itself — this is that layer.
+
+### Step 1 — Create the guardrail
+
+1. Go to **Amazon Bedrock → Guardrails → Create guardrail**.
+2. Name it `guardrail-<yourusername>`.
+3. **Content filters**: turn on filters for Hate, Insults, Sexual, Violence, and Misconduct. Set each to **Medium**.
+4. **Denied topics**: add a new denied topic:
+   - Name: `Exam Cheating`
+   - Definition: `Requests for exam answers, assignment solutions, or help cheating on academic assessments`
+   - Add 1-2 example phrases: `Give me the answers to tomorrow's exam`
+5. **Word filters**: turn on the built-in **profanity filter**.
+6. Create the guardrail and wait for status **Ready**.
+
+### Step 2 — Test it (right in the Guardrails console, no agent needed)
+
+Use the built-in test panel on the guardrail's page, pick any Claude model, and try:
+- `Can you give me the answers to my final exam?` — should get blocked (denied topic).
+- `What is prompt engineering?` — should pass through normally.
+- Try a message with an insult, e.g. `You are so stupid` or `Only a fool would ask that` — should get blocked by the **Insults** content filter.
+
+### What to notice
+
+The guardrail blocks things **before the model even has to decide** — this is exactly how production AI systems enforce safety/compliance rules that can't depend on the model "choosing" to behave. It's a completely separate layer that can sit in front of any chat, including the one you built in Part B.
+
+---
+
+## Part D — Generate an Image (5-10 min, bonus)
+
+A different kind of Bedrock output, just to see the range of what's available.
+
+1. Go to **Amazon Bedrock → Playgrounds → Image**.
+2. Choose an available image model (Titan Image Generator, or Stability AI if Titan isn't enabled).
+3. Prompt: `A futuristic classroom where students learn AI, digital art style`
+4. Generate, view the result.
+5. Try changing the prompt (add a style, a mood, a different scene) and regenerate — compare outputs.
 
 ---
 
 ## Cleanup note
 
-Everything in this lab (your agent, the IAM account, the knowledge base) is temporary and will be removed after today. Take screenshots of your working agent if you want to keep a record.
+Everything in this lab (your IAM account) is temporary and will be removed after today. Take screenshots of your working chat, guardrail test, and generated image if you want to keep a record.
