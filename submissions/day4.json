@@ -1,0 +1,52 @@
+{
+  "day": 4,
+  "student_name": "Dhriti Gupta",
+  "github": "DhritiGupta2006",
+  "incidents": [
+    {
+      "id": "A",
+      "failure_type": "Hallucination",
+      "principle": "Reliability",
+      "justification": "The chatbot confidently fabricated a non-existent discount policy, producing false information that users could not rely on."
+    },
+    {
+      "id": "B",
+      "failure_type": "Privacy Violation",
+      "principle": "Privacy",
+      "justification": "The assistant collected and retained sensitive employee and client information without users' knowledge or consent, violating privacy expectations."
+    },
+    {
+      "id": "C",
+      "failure_type": "Deepfake/Misinformation",
+      "principle": "Transparency",
+      "justification": "The AI-generated video falsely portrayed a real person without disclosure, misleading the public and influencing market behavior."
+    },
+    {
+      "id": "D",
+      "failure_type": "Bias/Discrimination",
+      "principle": "Fairness",
+      "justification": "The system indirectly discriminated against applicants based on a proxy for gender, resulting in unfair hiring decisions."
+    },
+    {
+      "id": "E",
+      "failure_type": "Lack of Human Oversight",
+      "principle": "Human Oversight",
+      "justification": "The biased moderation pattern went unchecked for weeks because no human monitored or reviewed the system's decisions."
+    },
+    {
+      "id": "F",
+      "failure_type": "Deepfake/Misinformation",
+      "principle": "Security",
+      "justification": "Scammers used AI-generated voice cloning to impersonate an executive and deceive an employee into authorizing a fraudulent financial transfer."
+    }
+  ],
+  "justifications_written": 6,
+  "stretch_done": true,
+  "stretch_company": "Clearview AI",
+  "stretch_failure_type": "Privacy Violation",
+  "stretch_principle": "Privacy",
+  "stretch_notes": "Clearview AI scraped billions of facial images from social media and websites without users' consent to build a facial recognition database. Regulators in multiple countries found this violated privacy laws because personal biometric data was collected and used without permission.",
+  "tasks_completed": 6,
+  "tasks_total": 6,
+  "submitted_at": "2026-07-16T06:24:39.232Z"
+}
